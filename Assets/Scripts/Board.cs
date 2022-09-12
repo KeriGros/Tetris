@@ -3,13 +3,14 @@ using UnityEngine.Tilemaps;
 
 public class Board : MonoBehaviour
 {
-    public Tilemap tilemap { get; private set; }
-    public Piece activePiece { get; private set; }
+    private Tilemap _tilemap;
+    private Piece _activePiece;
+    
     public Vector3Int spawnPosition;
     public TetrominoData[] tetrominoes;
     public Vector2Int boardSize = new Vector2Int(10, 20);
 
-    public RectInt Bounds
+    private RectInt Bounds
     { 
         get
         {
@@ -20,11 +21,11 @@ public class Board : MonoBehaviour
 
     private void Awake()
     {
-        tilemap = GetComponentInChildren<Tilemap>();
-        activePiece = GetComponentInChildren<Piece>();
+        _tilemap = GetComponentInChildren<Tilemap>();
+        _activePiece = GetComponentInChildren<Piece>();
         
         for (int i = 0; i < tetrominoes.Length; i++)
-            tetrominoes[i].Intilialize();
+            tetrominoes[i].Initialize();
     }
 
     private void Start()
@@ -37,35 +38,33 @@ public class Board : MonoBehaviour
         int random = Random.Range(0, tetrominoes.Length);
         TetrominoData data = tetrominoes[random];
 
-        activePiece.Initialize(this, spawnPosition, data);
-        if (IsValidPosition(activePiece, spawnPosition))
-            Set(activePiece);
+        _activePiece.Initialize(spawnPosition, data);
+        if (IsValidPosition(_activePiece, spawnPosition))
+            Set(_activePiece);
         else
             GameOver();
     }
 
     private void GameOver()
     {
-        tilemap.ClearAllTiles();
-        
-        //...
+        _tilemap.ClearAllTiles();
     }
 
     public void Set(Piece piece)
     {
-        for (int i = 0; i < piece.cells.Length; i++)
+        for (int i = 0; i < piece.Cells.Length; i++)
         {
-            Vector3Int tilePosition = piece.cells[i] + piece.position;
-            tilemap.SetTile(tilePosition, piece.data.Tile);
+            Vector3Int tilePosition = piece.Cells[i] + piece.Position;
+            _tilemap.SetTile(tilePosition, piece.TetrominoData.tile);
         }
     }
     
     public void Clear(Piece piece)
     {
-        for (int i = 0; i < piece.cells.Length; i++)
+        for (int i = 0; i < piece.Cells.Length; i++)
         {
-            Vector3Int tilePosition = piece.cells[i] + piece.position;
-            tilemap.SetTile(tilePosition, null);
+            Vector3Int tilePosition = piece.Cells[i] + piece.Position;
+            _tilemap.SetTile(tilePosition, null);
         }
     }
     
@@ -73,13 +72,13 @@ public class Board : MonoBehaviour
     {
         RectInt bounds = Bounds;
         
-        for (int i = 0; i < piece.cells.Length; i++)
+        for (int i = 0; i < piece.Cells.Length; i++)
         {
-            Vector3Int tilePosition = piece.cells[i] + position;
+            Vector3Int tilePosition = piece.Cells[i] + position;
 
             if (!bounds.Contains((Vector2Int)tilePosition))
                 return false;
-            if (tilemap.HasTile(tilePosition))
+            if (_tilemap.HasTile(tilePosition))
                 return false;
         }
         return true;
@@ -104,7 +103,7 @@ public class Board : MonoBehaviour
         for (int col = bounds.xMin; col < bounds.xMax; col++)
         {
             Vector3Int position = new Vector3Int(col, row, 0);
-            if (!tilemap.HasTile(position))
+            if (!_tilemap.HasTile(position))
                 return false;
         }
         return true;
@@ -117,7 +116,7 @@ public class Board : MonoBehaviour
         for (int col = bounds.xMin; col < bounds.xMax; col++)
         {
             Vector3Int position = new Vector3Int(col, row, 0);
-            tilemap.SetTile(position, null);
+            _tilemap.SetTile(position, null);
         }
         
         while (row < bounds.yMax)
@@ -125,10 +124,10 @@ public class Board : MonoBehaviour
             for (int col = bounds.xMin; col < bounds.xMax; col++)
             {
                 Vector3Int position = new Vector3Int(col, row + 1, 0);
-                TileBase adove = tilemap.GetTile(position);
+                TileBase above = _tilemap.GetTile(position);
 
                 position = new Vector3Int(col, row, 0);
-                tilemap.SetTile(position, adove);
+                _tilemap.SetTile(position, above);
             }
 
             row++;

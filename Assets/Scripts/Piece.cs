@@ -1,44 +1,40 @@
 using UnityEngine;
 
 public class Piece : MonoBehaviour
-{
+{ 
+    public Vector3Int Position { get; private set; }
+    public TetrominoData TetrominoData { get; private set; }
+    public Vector3Int[] Cells { get; private set; }
+    
     [SerializeField] private Board board;
-    public Vector3Int position { get; private set; }
-    public TetrominoData data { get; private set; }
-    public Vector3Int[] cells { get; private set; }
-    public int rotationIndex { get; private set; }
+    [SerializeField] private float stepDelay = 1f;
+    [SerializeField] private float lockDelay = 0.5f;
 
-    public float stepDelay = 1f;
-    public float lockDelay = 0.5f;
+    private float _stepTime;
+    private float _lockTime;
+    private int _rotationIndex;
 
-    private float stepTime;
-    private float lockTime;
-
-    public void Initialize(Board board, Vector3Int position, TetrominoData data)
+    public void Initialize(Vector3Int position, TetrominoData data)
     {
-        this.board = board;
-        this.position = position;
-        this.data = data;
-        this.rotationIndex = 0;
-        this.stepTime = Time.time + this.stepDelay;
-        this.lockTime = 0f;
+        Position = position;
+        TetrominoData = data;
+        _rotationIndex = 0;
+        _stepTime = Time.time + stepDelay;
+        _lockTime = 0f;
 
-        if (this.cells == null)
-        {
-            this.cells = new Vector3Int[data.cells.Length];
-        }
+        Cells ??= new Vector3Int[data.Cells.Length];
 
-        for (int i = 0; i < data.cells.Length; i++)
+        for (int i = 0; i < data.Cells.Length; i++)
         {
-            this.cells[i] = (Vector3Int)data.cells[i];
+            Cells[i] = (Vector3Int)data.Cells[i];
         }
     }
 
     private void Update()
     {
-        this.board.Clear(this);
+        board.Clear(this);
 
-        lockTime += Time.deltaTime;
+        _lockTime += Time.deltaTime;
 
         if (Input.GetKeyDown(KeyCode.A))
             Move(Vector2Int.left);
@@ -53,19 +49,19 @@ public class Piece : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
             HardDrop();
         
-        if(Time.time >= stepTime)
+        if(Time.time >= _stepTime)
            Step();
 
-        this.board.Set(this);
+        board.Set(this);
     }
 
     private void Step()
     {
-        stepTime = Time.time + stepDelay;
+        _stepTime = Time.time + stepDelay;
 
         Move(Vector2Int.down);
 
-        if (lockTime >= lockDelay)
+        if (_lockTime >= lockDelay)
             Lock();
     }
 
@@ -79,23 +75,23 @@ public class Piece : MonoBehaviour
 
     private void Lock()
     {
-        this.board.Set(this);
-        this.board.ClearLines();
-        this.board.SpawnPiece();
+        board.Set(this);
+        board.ClearLines();
+        board.SpawnPiece();
     }
 
     private bool Move(Vector2Int translation)
     {
-        Vector3Int newPosition = this.position;
+        Vector3Int newPosition = Position;
         newPosition.x += translation.x;
         newPosition.y += translation.y;
 
-        bool valid = this.board.IsValidPosition(this, newPosition);
+        bool valid = board.IsValidPosition(this, newPosition);
 
         if (valid)
         {
-            position = newPosition;
-            lockTime = 0f;
+            Position = newPosition;
+            _lockTime = 0f;
         }
 
         return valid;
@@ -103,27 +99,27 @@ public class Piece : MonoBehaviour
 
     private void Rotate(int direction)
     {
-        int originalRotation = this.rotationIndex;
-        this.rotationIndex += Wrap(this.rotationIndex + direction, 0, 4);
+        int originalRotation = _rotationIndex;
+        _rotationIndex += Wrap(_rotationIndex + direction, 0, 4);
 
        ApplyRotationMatrix(direction);
 
-        if (!TestWallKicks(this.rotationIndex, direction))
+        if (!TestWallKicks(direction))
         {
-            this.rotationIndex = originalRotation;
+            _rotationIndex = originalRotation;
             ApplyRotationMatrix(-direction);
         }
     }
 
     private void ApplyRotationMatrix(int direction)
     {
-        for (int i = 0; i < this.cells.Length; i++)
+        for (int i = 0; i < Cells.Length; i++)
         {
-            Vector3 cell = this.cells[i];
+            Vector3 cell = Cells[i];
 
             int x, y;
 
-            switch (this.data.Tetromino)
+            switch (TetrominoData.tetromino)
             {
                 case Tetromino.I:
                 case Tetromino.O:
@@ -143,17 +139,17 @@ public class Piece : MonoBehaviour
                     break;
             }
 
-            this.cells[i] = new Vector3Int(x, y, 0);
+            Cells[i] = new Vector3Int(x, y, 0);
         }
     }
 
-    private bool TestWallKicks(int rotationIndex, int rotationDirection)
+    private bool TestWallKicks(int rotationDirection)
     {
-        int wallKickIndex = GetWallKickIndex(rotationIndex, rotationDirection);
+        int wallKickIndex = GetWallKickIndex(rotationDirection);
 
-        for (int i = 0; i < this.data.wallKiks.GetLength(1); i++)
+        for (int i = 0; i < TetrominoData.WallKicks.GetLength(1); i++)
         {
-            Vector2Int translation = this.data.wallKiks[wallKickIndex, i];
+            Vector2Int translation = TetrominoData.WallKicks[wallKickIndex, i];
 
             if (Move(translation))
                 return true;
@@ -162,16 +158,16 @@ public class Piece : MonoBehaviour
         return false;
     }
 
-    private int GetWallKickIndex(int rotationIndex, int rotationDirection)
+    private int GetWallKickIndex(int rotationDirection)
     {
-        int wallKickIndex = rotationIndex * 2;
+        int wallKickIndex = _rotationIndex * 2;
 
         if (rotationDirection < 0)
         {
             wallKickIndex--;
         }
 
-        return Wrap(wallKickIndex, 0, this.data.wallKiks.GetLength(0));
+        return Wrap(wallKickIndex, 0, TetrominoData.WallKicks.GetLength(0));
     }
 
     private int Wrap(int input, int min, int max)

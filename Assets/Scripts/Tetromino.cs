@@ -15,14 +15,14 @@ public enum Tetromino
 [System.Serializable]
 public struct TetrominoData
 {
-    public Tetromino Tetromino;
-    public Tile Tile;
-    public Vector2Int[] cells { get; private set; }
-    public Vector2Int[,] wallKiks { get; private set; }
+    public Tetromino tetromino;
+    public Tile tile;
+    public Vector2Int[] Cells { get; private set; }
+    public Vector2Int[,] WallKicks { get; private set; }
 
-    public void Intilialize()
+    public void Initialize()
     { 
-        cells = Data.Cells[Tetromino];
-        wallKiks = Data.WallKicks[this.Tetromino];
+        Cells = Data.Cells[tetromino];
+        WallKicks = Data.WallKicks[tetromino];
     }
 }

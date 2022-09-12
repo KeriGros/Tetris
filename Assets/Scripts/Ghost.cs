@@ -1,21 +1,20 @@
-using System;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
 public class Ghost : MonoBehaviour
 {
-    public Tile tile;
-    public Board board;
-    public Piece trackingPiece;
-    
-    public Tilemap tilemap { get; private set; }
-    public Vector3Int[] cells { get; private set; }
-    public Vector3Int position { get; private set; }
+    [SerializeField] private Tile tile;
+    [SerializeField] private Board board;
+    [SerializeField] private Piece trackingPiece;
+
+    private Tilemap _tilemap;
+    private Vector3Int[] _cells;
+    private Vector3Int _position;
 
     private void Awake()
     {
-        tilemap = GetComponentInChildren<Tilemap>();
-        cells = new Vector3Int[4];
+        _tilemap = GetComponentInChildren<Tilemap>();
+        _cells = new Vector3Int[4];
     }
 
     private void LateUpdate()
@@ -28,53 +27,49 @@ public class Ghost : MonoBehaviour
 
     private void Clear()
     {
-        for (int i = 0; i < this.cells.Length; i++)
+        for (int i = 0; i < _cells.Length; i++)
         {
-            Vector3Int tilePosition = this.cells[i] + this.position;
-            tilemap.SetTile(tilePosition, null);
+            Vector3Int tilePosition = _cells[i] + _position;
+            _tilemap.SetTile(tilePosition, null);
         }
     }
 
     private void Copy()
     {
-        for (int i = 0; i < this.cells.Length; i++)
+        for (int i = 0; i < _cells.Length; i++)
         {
-            this.cells[i] = this.trackingPiece.cells[i];
+            _cells[i] = trackingPiece.Cells[i];
         }
     }
 
     private void Drop()
     {
-        Vector3Int position = this.trackingPiece.position;
+        Vector3Int position = trackingPiece.Position;
 
         int current = position.y;
-        int bottom = -this.board.boardSize.y / 2 - 1;
+        int bottom = -board.boardSize.y / 2 - 1;
         
-        this.board.Clear(this.trackingPiece);
+        board.Clear(trackingPiece);
 
         for (int row = current; row >= bottom; row--)
         {
             position.y = row;
 
-            if (this.board.IsValidPosition(this.trackingPiece, position))
-            {
-                this.position = position;
-            }
+            if (board.IsValidPosition(trackingPiece, position))
+                _position = position;
             else
-            {
                 break;
-            }
         }
         
-        this.board.Set(this.trackingPiece);
+        board.Set(trackingPiece);
     }
 
     private void Set()
     {
-        for (int i = 0; i < this.cells.Length; i++)
+        for(int i = 0; i < _cells.Length; i++)
         {
-            Vector3Int tilePosition = this.cells[i] + this.position;
-            tilemap.SetTile(tilePosition, this.tile);
+            Vector3Int tilePosition = _cells[i] + _position;
+            _tilemap.SetTile(tilePosition, tile);
         }
     }
 }
